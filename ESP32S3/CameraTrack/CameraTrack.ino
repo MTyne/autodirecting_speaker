@@ -1,8 +1,10 @@
 #include <camera.h>
 #include <motor_control.h>
-float cw_deadzone = 0.5;
-float ccw_deadzone = -0.5;
-#define NUM_AVERAGES 25
+float cw_deadzone = 0.15;
+float ccw_deadzone = -0.15;
+#define NUM_AVERAGES 2
+#define MOTOR_MULT 300
+#define FRAME_RATE 5
 
 
 float rolling_average(float value, bool reset) {
@@ -11,6 +13,7 @@ float rolling_average(float value, bool reset) {
   if (reset) {
     for (uint8_t i=0; i<NUM_AVERAGES;i++) {
       values[i] = 0;
+      index = 0;
     }
   }
   float value_sum = 0;
@@ -19,15 +22,18 @@ float rolling_average(float value, bool reset) {
   for (uint8_t i=0; i<NUM_AVERAGES;i++) {
     value_sum += values[i];
   }
-  return value_sum / NUM_AVERAGES;
+  if (index == 0) {
+    return value_sum / NUM_AVERAGES;
+  }
+  return 0.0f;
 }
 
 float decider(float value) {
   if (value > cw_deadzone) {
-    return 1.0f;
+    return value-cw_deadzone;
   }
   if (value < ccw_deadzone) {
-    return -1.0f;
+    return value-ccw_deadzone;
   }
   return 0.0f;
 }
@@ -46,14 +52,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   float row, col, average;
   camera_capture();
-  camera_print(20);
+  camera_print(8);
   camera_get_point(1, &row, &col);
   average = rolling_average(col, false);
   camera_return();
 
-  Serial.printf("%f %f\n", row, col);
-  
-  Serial.printf("%f ", average);
+  Serial.printf("row: %f col: %f average: %f\n", row, col, average);
+
   if (decider(average) > 0.0f) {
     Serial.printf("CLOCKWISE with %f\n", decider(average));
   }
@@ -64,9 +69,8 @@ void loop() {
     Serial.printf("STILL with %f\n", decider(average));
   }
   if (decider(average) != 0.0f) {
-    motor_control(decider(average));
+    motor_control((int16_t)(decider(average) * MOTOR_MULT));
     rolling_average(0.0f, true);
   }
-  Serial.println();
-  delay(100);
+  delay((int)(1.0f/FRAME_RATE*1000));
 }

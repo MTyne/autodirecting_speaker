@@ -39,7 +39,7 @@ void camera_init() {
   config.fb_location = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 12;
   config.fb_count = 1;
-  config.frame_size = FRAMESIZE_240X240;
+  config.frame_size = FRAMESIZE_96X96;
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
@@ -63,6 +63,7 @@ void camera_init() {
 
 void _print_buffer(camera_fb_t * buf, uint8_t ratio) {
   char intensity[] = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+  //char intensity[] = "                                                               `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}I1tlu[neoZ5Yxjya]ESwqkP6hdVpOGbUAKXHmRD#$BgMNWQ%&@";
   char intensitybuffer[1024];
   size_t width = buf->width;
   size_t height = buf->height;
