@@ -5,9 +5,10 @@ float ccw_deadzone = -0.15;
 #define NUM_AVERAGES 2
 #define MOTOR_MULT 300
 #define FRAME_RATE 5
+#define THRESHOLD 0.5f
 
 
-float rolling_average(float value, bool reset) {
+float chunk_average(float value, bool reset) {
   static float values[NUM_AVERAGES];
   static uint8_t index = 0;
   if (reset) {
@@ -52,12 +53,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   float row, col, average;
   camera_capture();
-  camera_print(8);
-  camera_get_point(1, &row, &col);
-  average = rolling_average(col, false);
+  uint8_t thresh = 255 - (255 - camera_get_average()) * THRESHOLD;
+  camera_special_print(8, thresh);
+  camera_get_point(camera_get_average(), &row, &col);
+  average = chunk_average(col, false);
   camera_return();
 
-  Serial.printf("row: %f col: %f average: %f\n", row, col, average);
+  Serial.printf("row: %f col: %f average: %f thresh: %u\n", row, col, average, thresh);
 
   if (decider(average) > 0.0f) {
     Serial.printf("CLOCKWISE with %f\n", decider(average));
@@ -70,7 +72,7 @@ void loop() {
   }
   if (decider(average) != 0.0f) {
     motor_control((int16_t)(decider(average) * MOTOR_MULT));
-    rolling_average(0.0f, true);
+    chunk_average(0.0f, true);
   }
   delay((int)(1.0f/FRAME_RATE*1000));
 }
